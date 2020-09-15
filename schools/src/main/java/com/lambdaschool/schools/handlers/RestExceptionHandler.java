@@ -7,10 +7,13 @@ import org.hibernate.id.uuid.Helper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.util.Date;
@@ -37,5 +40,40 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler
         errorDetail.setDevelopermessage(rnfe.getClass().getName());
         errorDetail.setErrors(helperFunctions.getConstraintViolations(rnfe));
         return new ResponseEntity<>(errorDetail, null, HttpStatus.NOT_FOUND);
+    }
+
+    @Override //Generic Exception / use for build week instructor said
+    protected ResponseEntity<Object> handleExceptionInternal(
+        Exception ex,
+        Object body,
+        HttpHeaders headers,
+        HttpStatus status,
+        WebRequest request)
+    {
+        ErrorDetail errorDetail = new ErrorDetail();
+        errorDetail.setTimestamp(new Date());
+        errorDetail.setStatus(status.value());
+        errorDetail.setTitle("Rest Internal Exception");
+        errorDetail.setDetails(ex.getMessage());
+        errorDetail.setDevelopermessage(ex.getClass().getName());
+        errorDetail.setErrors(helperFunctions.getConstraintViolations(ex));
+        return new ResponseEntity<>(errorDetail, null, status);
+    }
+
+    @Override
+    protected ResponseEntity<Object> handleNoHandlerFoundException(
+        NoHandlerFoundException ex,
+        HttpHeaders headers,
+        HttpStatus status,
+        WebRequest request)
+    {
+        ErrorDetail errorDetail = new ErrorDetail();
+        errorDetail.setTimestamp(new Date());
+        errorDetail.setStatus(status.value());
+        errorDetail.setTitle("Rest Endpoint Not Valid");
+        errorDetail.setDetails(request.getDescription(false));
+        errorDetail.setDevelopermessage("Rest Handler Not Found (check for valid URI)");
+        errorDetail.setErrors(helperFunctions.getConstraintViolations(ex));
+        return new ResponseEntity<>(errorDetail, null, status);
     }
 }
